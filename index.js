@@ -10,7 +10,9 @@ server.get('/',(req,res)=>{
 server.get('/grp1',(req,res)=>{
     res.send("welcome from the 1st api from grp1")
 })
-
+server.get('/grp2',(req,res)=>{
+    res.send("welcome from the 1st api from grp2")
+})
 
 server.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
