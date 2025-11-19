@@ -1,4 +1,7 @@
 import user from "../schemas/User.schema.js";
+import jwt from "jsonwebtoken"
+
+
 
 export const register = async (req,res)=>{
     try {
@@ -24,6 +27,27 @@ export const register = async (req,res)=>{
         res.status(201).json({message:"user created successfully"})
     } catch (error) {
         
+        console.error(error)
+    }
+}
+
+export const login = async(req,res)=>{
+    try {
+        const {email,password}=req.body;
+
+        if(!email || !password){
+            return res.status(400).json({message:"all fields are required"})
+        }
+
+        const userExist = await user.findOne({email})
+
+        if(!userExist){
+            return res.status(400).json({message:"user not exist"})
+        }
+
+        const token = jwt.sign({email:userExist.email},"prasanna",{expiresIn:"90d"})
+        res.status(200).json({token,message:`${userExist.name} logged in successfully`})
+    } catch (error) {
         console.error(error)
     }
 }
