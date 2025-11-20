@@ -1,10 +1,13 @@
 import express from 'express'
 import connectToDatabase  from './utility/dbConnect.js'
 import userRouter from "./routes/user.route.js"
+import cors from 'cors';
+
+
 const server = express()
 //json support
 server.use(express.json())
-
+server.use(cors())
 
 server.get('/',(req,res)=>{
     res.send("welcome from the 1st api")
