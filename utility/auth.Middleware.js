@@ -10,7 +10,7 @@ export const authMiddleware = async (req, res, next) => {
         console.log(decodedToken);
         
         const user = await UserSchema.find({ email: decodedToken.email });
-        // console.log(user);
+        console.log(user);
         
         req.user = user;
         next();

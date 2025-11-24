@@ -45,7 +45,12 @@ export const login = async(req,res)=>{
             return res.status(400).json({message:"user not exist"})
         }
 
-        const token = jwt.sign({email:userExist.email},"prasanna",{expiresIn:"90d"})
+        const token = jwt.sign(
+  { userId: user._id, email: user.email },
+  "prasanna",
+  { expiresIn: "7d" }
+);
+
         res.status(200).json({token,message:`${userExist.name} logged in successfully`})
     } catch (error) {
         console.error(error)
