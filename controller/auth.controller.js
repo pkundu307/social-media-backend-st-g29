@@ -44,9 +44,11 @@ export const login = async(req,res)=>{
         if(!userExist){
             return res.status(400).json({message:"user not exist"})
         }
+        console.log(userExist._id);
+        
 
         const token = jwt.sign(
-  { userId: user._id, email: user.email },
+  { userId: userExist._id, email: user.email },
   "prasanna",
   { expiresIn: "7d" }
 );

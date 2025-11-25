@@ -3,18 +3,26 @@ import UserSchema from "../schemas/User.schema.js";
 
 
 export const authMiddleware = async (req, res, next) => {
-    try {
-        const token = req.headers.authorization.split(" ")[1];
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader)
+      return res.status(401).json({ message: "No token provided" });
 
-        const decodedToken = jwt.verify(token, "prasanna");
-        console.log(decodedToken);
-        
-        const user = await UserSchema.find({ email: decodedToken.email });
-        console.log(user);
-        
-        req.user = user;
-        next();
-    } catch (error) {
-        res.status(401).json({ message: "Unauthorized" });
-    }
-}
+    const token = authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(token, "prasanna");
+
+    const userId = decoded.userId; // ✔ correct
+    const user = await UserSchema.findById(userId).select("-password"); // remove password
+
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    req.user = user;
+
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({ message: "Unauthorized" });
+  }
+};

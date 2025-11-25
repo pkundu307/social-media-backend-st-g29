@@ -2,6 +2,7 @@ import express from 'express'
 import connectToDatabase  from './utility/dbConnect.js'
 import userRouter from "./routes/user.route.js"
 import postRouter from "./routes/post.route.js"
+import friendRequestRouter from "./routes/friendRequest.route.js"
 import cors from 'cors';
 
 
@@ -16,6 +17,7 @@ server.get('/',(req,res)=>{
 
 server.use("/api/user",userRouter)
 server.use("/api/post",postRouter)
+server.use("/api/friendrequest",friendRequestRouter)
 connectToDatabase();
 
 
