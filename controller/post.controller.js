@@ -43,7 +43,7 @@ export const createPost = async (req, res) => {
             console.log("Uploaded file:", imageUrl);
         }
 
-        const user = req.user[0]._id;
+        const user = req.user._id;
         const { text } = req.body;
         // handleUpload(req.file);
         if (!text) {
