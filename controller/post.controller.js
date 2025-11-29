@@ -83,3 +83,20 @@ export const likePost = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+export const getMyPosts = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const posts = await Post.find({ user: userId,isDeleted:false })
+    .limit(5)
+    .populate(
+      "user",
+      "username email profilePic"
+    ).sort({ createdAt: -1 });
+    res.status(200).json({ posts });
+  } catch (error) {
+  console.error(error);
+  res.status(500).json({ message: error.message });   
+  }
+}

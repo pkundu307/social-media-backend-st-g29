@@ -1,5 +1,6 @@
 import cloudinary from "../utility/cloudinary.js";
 import UserSchema from "../schemas/User.schema.js";
+import friendRequestSchema from "../schemas/friendRequest.schema.js";
 
 function uploadToCloudinary(buffer) {
   return new Promise((resolve, reject) => {
@@ -41,3 +42,35 @@ export const uploadProfilePic = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+
+export const getMyProfileData=async(req,res)=>{
+  try {
+    const userId=req.user._id;
+    const user=await UserSchema.findById(userId).select("-password");
+
+    const totalFriends= await friendRequestSchema.countDocuments({
+      $or:[{from:userId},{to:userId}],
+      status:"accepted"
+    })
+
+    const pendingRequests= await friendRequestSchema.countDocuments({
+      to:userId,
+      status:"pending"
+    })
+    user.totalFriends=totalFriends;
+    user.pendingRequests=pendingRequests;
+    if(!user){
+      return res.status(404).json({message:"User not found"});
+    }
+    res.status(200).json({
+      success:true,
+      user:req.user,
+      counts:{
+        friends:totalFriends,
+        pendingRequests:pendingRequests
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }}
