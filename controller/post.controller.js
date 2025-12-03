@@ -3,6 +3,7 @@ import { Post } from "../schemas/Post.schema.js";
 import cloudinary from "cloudinary";
 import multer from "multer";
 import dotenv from "dotenv";
+import { Notification } from "../schemas/notification.schema.js";
 
 dotenv.config();
 
@@ -70,14 +71,22 @@ export const createPost = async (req, res) => {
 
 export const likePost = async (req, res) => {
   try {
-    const user = req.user;
-    const { id } = req.params;
+ const userId=req.user._id;
+     const { id } = req.params;
     const post = await Post.findById(id);
     if (!post) {
       return res.status(400).json({ message: "post not found" });
     }
-    post.likes.push(user[0]._id);
+    post.likes.push(userId);
     await post.save();
+            const newNotification=await Notification.create({
+                to:post.user,
+                from:userId,
+                type:"like",
+                post:post._id
+            });
+
+
     res.status(200).json({ message: "post liked successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });

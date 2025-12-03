@@ -119,8 +119,38 @@ export const getFriendsList = async (req, res) => {
       })
       .sort({ updatedAt: -1 })
       .limit(15)
-      .populate("from", "name email")
-      .populate("to", "name email");
+      .populate("from", "name email profilePic")
+      .populate("to", "name email profilePic");
+    const friendsList = friends.map(fr => {
+      if (fr.from._id.toString() === userId.toString()) {
+        return fr.to;
+      }
+      return fr.from;
+    }
+    );
+    if(friendsList.length===0){
+      return  res.status(200).json({ message: "No Friends Found" });
+    }
+    res.status(200).json({ friends: friendsList });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+}
+export const getAllFriends = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    if (!userId) {
+      return res.status(400).json({ message: "Unauthorized access" });
+    }
+    const friends = await friendRequestSchema
+      .find({ 
+        $or: [ { from: userId }, { to: userId } ], 
+        status: "accepted" 
+      })
+      .sort({ updatedAt: -1 })
+      .populate("from", "name email profilePic")
+      .populate("to", "name email profilePic");
     const friendsList = friends.map(fr => {
       if (fr.from._id.toString() === userId.toString()) {
         return fr.to;
