@@ -1,4 +1,4 @@
-import { createPost,getMyPosts,likePost,upload } from "../controller/post.controller.js";
+import { createPost,getMyPosts,likePost,upload,deletePost } from "../controller/post.controller.js";
 import express from 'express'
 import { authMiddleware } from "../utility/auth.Middleware.js";
 
@@ -7,5 +7,7 @@ const router = express.Router();
 router.post("/create",authMiddleware,upload("image"),createPost)
 router.post("/like/:id",authMiddleware,likePost)
 router.get("/myposts",authMiddleware,getMyPosts)
+router.delete("/delete/:id", authMiddleware, deletePost);
+
 
 export default router
