@@ -101,7 +101,7 @@ export const getMyPosts = async (req, res) => {
     .limit(5)
     .populate(
       "user",
-      "username email profilePic"
+      "name email profilePic"
     ).sort({ createdAt: -1 });
     res.status(200).json({ posts });
   } catch (error) {
