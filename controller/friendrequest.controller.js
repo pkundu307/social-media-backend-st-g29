@@ -45,8 +45,8 @@ export const getFriendRequests = async (req, res) => {
     const user = req.user._id;
     const friendRequests = await friendRequestSchema
       .find({ to: user })
-      .populate("from", "username email")
-      .populate("to", "username email");
+      .populate("from", "name profilePic email")
+      .populate("to", "name profilePic email");
 
     if (friendRequests.length === 0) {
       return res.status(200).json({ message: "No Friend Requests Found" });
