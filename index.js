@@ -4,6 +4,7 @@ import userRouter from "./routes/user.route.js"
 import postRouter from "./routes/post.route.js"
 import friendRequestRouter from "./routes/friendRequest.route.js"
 import notificationRouter from "./routes/notification.route.js"
+import otpRouter from "./routes/otp.route.js"
 import cors from 'cors';
 
 
@@ -20,6 +21,7 @@ server.use("/api/user",userRouter)
 server.use("/api/post",postRouter)
 server.use("/api/friendrequest",friendRequestRouter)
 server.use("/api/notification",notificationRouter)
+server.use("/api/otp",otpRouter)
 connectToDatabase();
 
 
