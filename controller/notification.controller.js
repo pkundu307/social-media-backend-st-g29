@@ -27,7 +27,7 @@ export const markNotificationAsRead=async(req,res)=>{
     if(!notification){
       return res.status(404).json({message:"Notification not found"});
     }   
-    notification.isRead=true;
+    notification.checked=true;
     await notification.save();
     res.status(200).json({message:"Notification marked as read",notification});
   } catch (error) {
@@ -39,7 +39,7 @@ export const markNotificationAsRead=async(req,res)=>{
 export const markAllNotificationsAsRead=async(req,res)=>{
   try {
     const userId=req.user._id;  
-    const result=await Notification.updateMany({to:userId,isRead:false},{$set:{isRead:true}});
+    const result=await Notification.updateMany({to:userId,checked:false},{$set:{checked:true}});
 
     res.status(200).json({message:"All notifications marked as read",modifiedCount:result.modifiedCount});
   } catch (error) {
