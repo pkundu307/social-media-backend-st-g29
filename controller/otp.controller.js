@@ -32,7 +32,7 @@ export const createOTP = async (req, res) => {
       secure: false,
       auth: {
         user: "pkundu307@gmail.com",
-        pass: "qmyj lskt qvga yraa", // Gmail App Password (correct)
+        pass: "", // Gmail App Password (correct)
       },
     });
 
