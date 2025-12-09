@@ -80,7 +80,7 @@ export const searchUser = async (req, res) => {
     // Case-insensitive partial search
     const users = await user.find({
       name: { $regex: name, $options: "i" }
-    }).select("name email");
+    }).select("name email profilePic");
 
     if (users.length === 0) {
       return res.status(200).json({ message: "No user found", users: [] });
