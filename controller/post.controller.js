@@ -1,4 +1,3 @@
-
 import { Post } from "../schemas/Post.schema.js";
 import cloudinary from "cloudinary";
 import multer from "multer";
@@ -41,12 +40,13 @@ export const createPost = async (req, res) => {
         if (req.file) {
             const result = await uploadToCloudinary(req.file.buffer);
             imageUrl = result.secure_url;
-            console.log("Uploaded file:", imageUrl);
+            console.log("Uploaded file no file uploaded:", imageUrl);
         }
 
         const user = req.user._id;
         const { text } = req.body;
         // handleUpload(req.file);
+        console.log(text)
         if (!text) {
             return res.status(400).json({ message: "Text is required" });
         }
@@ -101,7 +101,7 @@ export const getMyPosts = async (req, res) => {
     .limit(5)
     .populate(
       "user",
-      "name email profilePic"
+      "username email profilePic"
     ).sort({ createdAt: -1 });
     res.status(200).json({ posts });
   } catch (error) {
@@ -147,3 +147,36 @@ export const deletePost = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const restorePost = async (req, res) => {
+  try {
+    const { id } = req.params;          
+    const userId = req.user._id;      
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Only the owner can restore
+    if (post.user.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "You are not allowed to restore this post" });
+    }
+
+    if (!post.isDeleted) {
+      return res.status(400).json({ message: "Post is not deleted" });
+    }
+
+    post.isDeleted = false;
+    post.deletedAt = null;
+
+    await post.save();
+
+    return res.status(200).json({ message: "Post restored successfully", post });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};                          
