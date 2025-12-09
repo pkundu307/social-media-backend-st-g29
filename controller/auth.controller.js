@@ -1,5 +1,8 @@
 import user from "../schemas/User.schema.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+
+const salt = bcrypt.genSaltSync(10);
 
 export const register = async (req, res) => {
   try {
@@ -17,7 +20,9 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "user already exist" });
     }
 
-    const userCreated = await user.create({ email, password, name });
+    const hashedPassword = bcrypt.hashSync(password, salt);
+
+    const userCreated = await user.create({ email, password:hashedPassword, name });
     if (!userCreated) {
       return res.status(400).json({ message: "user not created" });
     }
@@ -37,6 +42,13 @@ export const login = async (req, res) => {
     }
 
     const userExist = await user.findOne({ email });
+
+    const isPasswordValid = userExist
+      ? bcrypt.compareSync(password, userExist.password)
+      : false;
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     if (!userExist) {
       return res.status(400).json({ message: "user not exist" });

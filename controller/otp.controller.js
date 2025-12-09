@@ -1,6 +1,9 @@
 import { OTP } from "../schemas/otp.schema.js";
 import nodemailer from "nodemailer";
 import UserSchema from "../schemas/User.schema.js";
+import bcrypt from "bcryptjs";
+
+const salt = bcrypt.genSaltSync(10);
 
 export const createOTP = async (req, res) => {
   try {
@@ -28,8 +31,8 @@ export const createOTP = async (req, res) => {
       port: 587,
       secure: false,
       auth: {
-        user: "",
-        pass: "", 
+        user: "pkundu307@gmail.com",
+        pass: "qmyj lskt qvga yraa", // Gmail App Password (correct)
       },
     });
 
@@ -48,4 +51,33 @@ export const createOTP = async (req, res) => {
     console.error("Error creating OTP:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+};
+
+
+export const changePasswordWithOTP = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const otpEntry = await OTP.findOne({ email, otp }).sort({ createdAt: -1 });
+    if (!otpEntry) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+   if(otpEntry.is_expired=== true){
+    return res.status(400).json({ message: "OTP has expired" });
+   }
+    const user = await UserSchema.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const hashedPassword = bcrypt.hashSync(newPassword, salt);
+    user.password = hashedPassword;
+    await user.save();
+    await OTP.deleteMany({ email });
+
+    res.status(200).json({ message: "Password changed successfully" });
+  }
+    catch (error) {
+    console.error("Error changing password with OTP:", error);
+    res.status(500).json({ message: "Internal server error" });
+  } 
 };
