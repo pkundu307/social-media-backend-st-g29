@@ -2,6 +2,7 @@ import cloudinary from "../utility/cloudinary.js";
 import UserSchema from "../schemas/User.schema.js";
 import friendRequestSchema from "../schemas/friendRequest.schema.js";
 import { Post } from "../schemas/Post.schema.js";
+import bcrypt from "bcryptjs";
 
 function uploadToCloudinary(buffer) {
   return new Promise((resolve, reject) => {
@@ -117,5 +118,31 @@ export const getMyProfileData=async(req,res)=>{
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: "Both oldPassword and newPassword are required" });
+    }
+
+    const userId = req.user._id;
+    const user = await UserSchema.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isMatch = bcrypt.compareSync(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Old password is incorrect" });
+
+    const salt = bcrypt.genSaltSync(10);
+    const hashed = bcrypt.hashSync(newPassword, salt);
+    user.password = hashed;
+    await user.save();
+
+    return res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
