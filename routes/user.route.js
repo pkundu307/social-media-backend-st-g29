@@ -21,5 +21,7 @@ router.post(
   upload.single("profilePic"),
   uploadProfilePic
 );
+router.post("/change-password", authMiddleware, changePassword);
+export default router;
 router.put("/update", authMiddleware, updateUserDetails);
 export default router;
