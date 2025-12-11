@@ -77,6 +77,9 @@ export const likePost = async (req, res) => {
     if (!post) {
       return res.status(400).json({ message: "post not found" });
     }
+    if (post.likes.includes(userId)) {
+      return res.status(400).json({ message: "You have already liked this post" });
+    }
     post.likes.push(userId);
     await post.save();
             const newNotification=await Notification.create({

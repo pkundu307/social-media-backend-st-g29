@@ -1,6 +1,7 @@
 import { login, register, searchUser } from "../controller/auth.controller.js";
 import express from "express";
 import {
+  changePassword,
   getMyProfileData,
   uploadProfilePic,
 } from "../controller/user.controller.js";
@@ -22,6 +23,5 @@ router.post(
   uploadProfilePic
 );
 router.post("/change-password", authMiddleware, changePassword);
-export default router;
 router.put("/update", authMiddleware, updateUserDetails);
 export default router;
