@@ -21,7 +21,6 @@ function uploadToCloudinary(buffer) {
 
 export const uploadProfilePic = async (req, res) => {
   try {
-
     if (!req.file) {
       return res.status(400).json({ message: "Please upload a file" });
     }
@@ -44,39 +43,40 @@ export const uploadProfilePic = async (req, res) => {
   }
 };
 
-export const getMyProfileData=async(req,res)=>{
+export const getMyProfileData = async (req, res) => {
   try {
-    const userId=req.user._id;
-    const user=await UserSchema.findById(userId).select("-password");
+    const userId = req.user._id;
+    const user = await UserSchema.findById(userId).select("-password");
 
-    const totalFriends= await friendRequestSchema.countDocuments({
-      $or:[{from:userId},{to:userId}],
-      status:"accepted"
-    })
+    const totalFriends = await friendRequestSchema.countDocuments({
+      $or: [{ from: userId }, { to: userId }],
+      status: "accepted",
+    });
 
-    const pendingRequests= await friendRequestSchema.countDocuments({
-      to:userId,
-      status:"pending"
-    })
-    user.totalFriends=totalFriends;
-    user.pendingRequests=pendingRequests;
-    if(!user){
-      return res.status(404).json({message:"User not found"});
+    const pendingRequests = await friendRequestSchema.countDocuments({
+      to: userId,
+      status: "pending",
+    });
+    user.totalFriends = totalFriends;
+    user.pendingRequests = pendingRequests;
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
     res.status(200).json({
-      success:true,
-      user:req.user,
-      counts:{
-        friends:totalFriends,
-        pendingRequests:pendingRequests
-      }
+      success: true,
+      user: req.user,
+      counts: {
+        friends: totalFriends,
+        pendingRequests: pendingRequests,
+      },
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
-  }}
-  
-  export const getUserWithPosts = async (req, res) => {
+  }
+};
+
+export const getUserWithPosts = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -117,5 +117,56 @@ export const getMyProfileData=async(req,res)=>{
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateUserDetails = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { name, email, password } = req.body;
+
+    if (!name && !email) {
+      return res.status(400).json({ message: "Nothing to update" });
+    }
+
+    if (!password) {
+      return res
+        .status(400)
+        .json({ message: "Password required to update details" });
+    }
+
+    // Find user and verify password
+    const user = await UserSchema.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (password !== user.password) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
+
+    if (email) {
+      const existingUser = await UserSchema.findOne({ email });
+      if (existingUser && existingUser._id.toString() !== userId.toString()) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+    }
+
+    let updateObj = {};
+    if (name) updateObj.name = name;
+    if (email) updateObj.email = email;
+
+    const updatedUser = await UserSchema.findByIdAndUpdate(userId, updateObj, {
+      new: true,
+    }).select("-password");
+
+    return res.status(200).json({
+      success: true,
+      message: "User details updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
   }
 };
