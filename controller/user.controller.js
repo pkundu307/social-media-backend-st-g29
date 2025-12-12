@@ -146,6 +146,8 @@ export const changePassword = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+ 
+
 export const updateUserDetails = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -156,18 +158,17 @@ export const updateUserDetails = async (req, res) => {
     }
 
     if (!password) {
-      return res
-        .status(400)
-        .json({ message: "Password required to update details" });
+      return res.status(400).json({ message: "Password required to update details" });
     }
 
-    // Find user and verify password
-    const user = await UserSchema.findById(userId);
+    const user = await UserSchema.findById(userId).select("+password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (password !== user.password) {
+     
+    const isMatch = bcrypt.compareSync(password, user.password);
+    if (!isMatch) {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
@@ -182,9 +183,11 @@ export const updateUserDetails = async (req, res) => {
     if (name) updateObj.name = name;
     if (email) updateObj.email = email;
 
-    const updatedUser = await UserSchema.findByIdAndUpdate(userId, updateObj, {
-      new: true,
-    }).select("-password");
+    const updatedUser = await UserSchema.findByIdAndUpdate(
+      userId,
+      updateObj,
+      { new: true }
+    ).select("-password");
 
     return res.status(200).json({
       success: true,
@@ -192,7 +195,7 @@ export const updateUserDetails = async (req, res) => {
       user: updatedUser,
     });
   } catch (error) {
-    console.error(error);
+    console.error("updateUserDetails error:", error);
     return res.status(500).json({ message: error.message });
   }
 };
