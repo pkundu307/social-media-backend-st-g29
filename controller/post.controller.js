@@ -147,3 +147,45 @@ export const deletePost = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+//add comment to post 
+export const addComment = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id } = req.params;    
+    const { text } = req.body;
+
+    // validation
+    if (!text || typeof text !== "string" || text.trim().length === 0) {
+      return res.status(400).json({ message: "Comment text is required" });
+    }
+
+    const post = await Post.findById(id);
+    if (!post || post.isDeleted) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // push embedded comment
+    const commentObj = {
+      user: userId,
+      text: text.trim(),
+      createdAt: new Date()
+    };
+
+    post.comments.push(commentObj);
+    await post.save();
+
+    // return newly added comment (last one in the embedded array) and updated commentCount
+    const newComment = post.comments[post.comments.length - 1];
+
+    return res.status(201).json({
+      message: "Comment added successfully",
+      comment: newComment,
+      commentCount: post.comments.length
+    });
+  } catch (error) {
+    console.error("addComment error:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
