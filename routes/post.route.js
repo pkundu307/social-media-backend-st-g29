@@ -1,4 +1,5 @@
-import { createPost, getMyPosts, likePost, upload, deletePost, restorePost, getDeletedPosts } from "../controller/post.controller.js";
+import { createPost, getMyPosts, likePost, upload, deletePost, restorePost, getDeletedPosts,addComment } from "../controller/post.controller.js";
+// import { createPost,getMyPosts,likePost,upload,deletePost ,} from "../controller/post.controller.js";
 import express from 'express'
 import { authMiddleware } from "../utility/auth.Middleware.js";
 
@@ -11,4 +12,6 @@ router.delete("/delete/:id", authMiddleware, deletePost);
 router.put("/restore/:id", authMiddleware, restorePost);
 router.get('/deletedposts', authMiddleware, getDeletedPosts);
 
-export default router;
+router.post("/comment/:id",authMiddleware,addComment);
+
+export default router
