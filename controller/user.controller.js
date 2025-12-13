@@ -196,3 +196,34 @@ export const updateUserDetails = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+// New function to get user profile with friend status
+export const getUserProfileWithFriendStatus = async (req, res) => {
+  try {
+    const loggedInUser = req.user._id;
+    const targetUserId = req.params.id;
+    const user = await UserSchema.findById(targetUserId).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const friendship = await friendRequestSchema.findOne({
+      $or: [
+        { from: loggedInUser, to: targetUserId, status: "accepted" },
+        { from: targetUserId, to: loggedInUser, status: "accepted" }
+      ]
+    });
+    const posts = await Post.find({ user: targetUserId, isDeleted: false })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("user", "name email profilePic");
+    return res.status(200).json({
+      success: true,
+      user,
+      is_friend: friendship ? true : false,
+      posts
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
