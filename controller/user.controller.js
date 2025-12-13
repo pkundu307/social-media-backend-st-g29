@@ -44,11 +44,47 @@ export const uploadProfilePic = async (req, res) => {
   }
 };
 
+//export const getMyProfileData = async (req, res) => {
+ // try {
+  //  const userId = req.user._id;
+ //   const user = await UserSchema.findById(userId).select("-password");
+
+   // const totalFriends = await friendRequestSchema.countDocuments({
+  //    $or: [{ from: userId }, { to: userId }],
+  //    status: "accepted",
+   // });
+
+   // const pendingRequests = await friendRequestSchema.countDocuments({
+   //   to: userId,
+   //   status: "pending",
+   // });
+   // user.totalFriends = totalFriends;
+    //user.pendingRequests = pendingRequests;
+    //if (!user) {
+    //  return res.status(404).json({ message: "User not found" });
+   // }
+   // res.status(200).json({
+    //  success: true,
+    //  user: req.user,
+    //  counts: {
+    //    friends: totalFriends,
+    //    pendingRequests: pendingRequests,
+    //  },
+   // });
+ // } catch (error) {
+  //  console.error(error);
+   // res.status(500).json({ message: error.message });
+ // }
+//};
+
 export const getMyProfileData = async (req, res) => {
   try {
     const userId = req.user._id;
+    
     const user = await UserSchema.findById(userId).select("-password");
-
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     const totalFriends = await friendRequestSchema.countDocuments({
       $or: [{ from: userId }, { to: userId }],
       status: "accepted",
@@ -58,24 +94,43 @@ export const getMyProfileData = async (req, res) => {
       to: userId,
       status: "pending",
     });
-    user.totalFriends = totalFriends;
-    user.pendingRequests = pendingRequests;
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+
+    const posts = await Post.find({
+      user: userId,
+      isDeleted: false,
+    })
+      .sort({ createdAt: -1 })
+      .populate("user", "name profilePic")
+      .populate("comments.user", "name profilePic")
+      .lean();
+
+    const postsWithLatestComments = posts.map(post => {
+      const sortedComments = post.comments
+        ?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 2);
+
+      return {
+        ...post,
+        comments: sortedComments,
+      };
+    });
+
     res.status(200).json({
       success: true,
-      user: req.user,
+      user,
       counts: {
         friends: totalFriends,
-        pendingRequests: pendingRequests,
+        pendingRequests,
       },
+      posts: postsWithLatestComments,
     });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 export const getUserWithPosts = async (req, res) => {
   try {
