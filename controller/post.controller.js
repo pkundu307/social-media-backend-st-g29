@@ -16,15 +16,15 @@ function uploadToCloudinary(buffer) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.v2.uploader.upload_stream(
       {
-        resource_type:'auto'
+        resource_type: 'auto'
       },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result);
-          }
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
         }
+      }
     );
     stream.end(buffer);
   });
@@ -33,46 +33,46 @@ function uploadToCloudinary(buffer) {
 const storage = multer.memoryStorage();
 export const upload = (fieldName) =>
   multer({ storage: storage }).single(fieldName);
+
 export const createPost = async (req, res) => {
-    try {
-        let imageUrl = null;
+  try {
+    let imageUrl = null;
 
-        if (req.file) {
-            const result = await uploadToCloudinary(req.file.buffer);
-            imageUrl = result.secure_url;
-            console.log("Uploaded file no file uploaded:", imageUrl);
-        }
-
-        const user = req.user._id;
-        const { text } = req.body;
-        // handleUpload(req.file);
-        console.log(text)
-        if (!text) {
-            return res.status(400).json({ message: "Text is required" });
-        }
-
-        const post = await Post.create({
-            user,
-            text,
-            image: imageUrl
-        });
-
-        return res.status(201).json({
-            message: "Post created successfully",
-            post
-        });
-
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: err.message });
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer);
+      imageUrl = result.secure_url;
+      console.log("Uploaded file no file uploaded:", imageUrl);
     }
-};
 
+    const user = req.user._id;
+    const { text } = req.body;
+    // handleUpload(req.file);
+    console.log(text)
+    if (!text) {
+      return res.status(400).json({ message: "Text is required" });
+    }
+
+    const post = await Post.create({
+      user,
+      text,
+      image: imageUrl
+    });
+
+    return res.status(201).json({
+      message: "Post created successfully",
+      post
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: err.message });
+  }
+};
 
 export const likePost = async (req, res) => {
   try {
- const userId=req.user._id;
-     const { id } = req.params;
+    const userId = req.user._id;
+    const { id } = req.params;
     const post = await Post.findById(id);
     if (!post) {
       return res.status(400).json({ message: "post not found" });
@@ -82,13 +82,12 @@ export const likePost = async (req, res) => {
     }
     post.likes.push(userId);
     await post.save();
-            const newNotification=await Notification.create({
-                to:post.user,
-                from:userId,
-                type:"like",
-                post:post._id
-            });
-
+    const newNotification = await Notification.create({
+      to: post.user,
+      from: userId,
+      type: "like",
+      post: post._id
+    });
 
     res.status(200).json({ message: "post liked successfully" });
   } catch (error) {
@@ -96,26 +95,72 @@ export const likePost = async (req, res) => {
   }
 };
 
-
 export const getMyPosts = async (req, res) => {
   try {
     const userId = req.user._id;
-    const posts = await Post.find({ user: userId,isDeleted:false })
-    .limit(5)
-    .populate(
-      "user",
-      "username email profilePic"
-    ).sort({ createdAt: -1 });
+    const posts = await Post.find({ user: userId, isDeleted: false })
+      .limit(5)
+      .populate(
+        "user",
+        "username email profilePic"
+      ).sort({ createdAt: -1 });
     res.status(200).json({ posts });
   } catch (error) {
-  console.error(error);
-  res.status(500).json({ message: error.message });   
+    console.error(error);
+    res.status(500).json({ message: error.message });
   }
 }
+
+export const getDeletedPosts = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { page = 1, limit = 10 } = req.query;
+
+    // Convert page and limit to numbers
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Find deleted posts for the current user
+    const deletedPosts = await Post.find({
+      user: userId,
+      isDeleted: true
+    })
+      .skip(skip)
+      .limit(limitNumber)
+      .populate(
+        "user",
+        "username email profilePic"
+      )
+      .sort({ deletedAt: -1, createdAt: -1 });
+
+    // Get total count for pagination
+    const totalDeletedPosts = await Post.countDocuments({
+      user: userId,
+      isDeleted: true
+    });
+
+    return res.status(200).json({
+      message: "Deleted posts fetched successfully",
+      posts: deletedPosts,
+      pagination: {
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalDeletedPosts / limitNumber),
+        totalItems: totalDeletedPosts,
+        itemsPerPage: limitNumber
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export const deletePost = async (req, res) => {
   try {
-    const { id } = req.params;         
-    const userId = req.user._id;       
+    const { id } = req.params;
+    const userId = req.user._id;
     const post = await Post.findById(id);
 
     if (!post) {
@@ -131,7 +176,7 @@ export const deletePost = async (req, res) => {
       const publicId = post.image
         .split("/")
         .pop()
-        .split(".")[0]; 
+        .split(".")[0];
 
       try {
         await cloudinary.v2.uploader.destroy(publicId);
@@ -153,8 +198,8 @@ export const deletePost = async (req, res) => {
 
 export const restorePost = async (req, res) => {
   try {
-    const { id } = req.params;          
-    const userId = req.user._id;      
+    const { id } = req.params;
+    const userId = req.user._id;
 
     const post = await Post.findById(id);
 
@@ -182,4 +227,4 @@ export const restorePost = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: error.message });
   }
-};                          
+};
