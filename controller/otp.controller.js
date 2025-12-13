@@ -31,13 +31,13 @@ export const createOTP = async (req, res) => {
       port: 587,
       secure: false,
       auth: {
-        user: "pkundu307@gmail.com",
-        pass: "", // Gmail App Password (correct)
+        user: "srenisivadas2004@gmail.com",
+        pass: "hyaf iifk cubd fchr", // Gmail App Password (correct)
       },
     });
 
     const info = await transporter.sendMail({
-      from: "pkundu307@gmail.com",
+      from: "srenisivadas2004@gmail.com",
       to: email, // FIXED
       subject: "Your OTP Code",
       html: `<h2>Your OTP is: <b>${generatedOTP}</b></h2>`,
