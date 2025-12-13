@@ -4,6 +4,7 @@ import {
   changePassword,
   getMyProfileData,
   uploadProfilePic,
+  getUserProfileWithFriendStatus,
 } from "../controller/user.controller.js";
 import { authMiddleware } from "../utility/auth.Middleware.js";
 import { upload } from "../utility/multer.js";
@@ -24,4 +25,5 @@ router.post(
 );
 router.post("/change-password", authMiddleware, changePassword);
 router.put("/update", authMiddleware, updateUserDetails);
+router.get("/friendprofile/:id", authMiddleware, getUserProfileWithFriendStatus);
 export default router;
