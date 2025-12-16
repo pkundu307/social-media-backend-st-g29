@@ -73,6 +73,8 @@ export const likePost = async (req, res) => {
   try {
     const userId = req.user._id;
     const { id } = req.params;
+    // console.log(userId,id);
+    
     const post = await Post.findById(id);
     if (!post) {
       return res.status(400).json({ message: "post not found" });
@@ -161,6 +163,8 @@ export const deletePost = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
+    console.log(id,userId);
+    
     const post = await Post.findById(id);
 
     if (!post) {

@@ -63,7 +63,7 @@ export const login = async (req, res) => {
 
     res
       .status(200)
-      .json({ token, message: `${userExist.name} logged in successfully` });
+      .json({profilePic:userExist.profilePic, token, message: `${userExist.name} logged in successfully` });
   } catch (error) {
     console.error(error);
   }
