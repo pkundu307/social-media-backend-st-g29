@@ -1,5 +1,5 @@
-import chatSchema from "../schemas/chat.schema";
-import { isFriend } from "../utility/isFriend";
+import chatSchema from "../schemas/chat.schema.js";
+import { isFriend } from "../utility/isFriend.js";
 
 export const sendMessage = async (req, res) => {
     try {

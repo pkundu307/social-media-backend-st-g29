@@ -1,62 +1,95 @@
-import express from 'express'
-import connectToDatabase  from './utility/dbConnect.js'
-import userRouter from "./routes/user.route.js"
-import postRouter from "./routes/post.route.js"
-import friendRequestRouter from "./routes/friendRequest.route.js"
-import notificationRouter from "./routes/notification.route.js"
-import otpRouter from "./routes/otp.route.js"
-import cors from 'cors';
-import { Server } from 'socket.io'
-import { isFriend } from './utility/isFriend.js'
+import express from "express";
+import http from "http";
+import cors from "cors";
+import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+import connectToDatabase from "./utility/dbConnect.js";
+import userRouter from "./routes/user.route.js";
+import postRouter from "./routes/post.route.js";
+import friendRequestRouter from "./routes/friendRequest.route.js";
+import notificationRouter from "./routes/notification.route.js";
+import otpRouter from "./routes/otp.route.js";
+import chatRouter from "./routes/chat.route.js";
 
-export const initSocketServer = (server) => {
-    const io = new Server(server, {
-        cors: {
-            origin: "*",
-            // methods: ["GET", "POST"],
-        },
-    });
-    return io;
+import chatSchema from "./schemas/chat.schema.js";
+import { isFriend } from "./utility/isFriend.js";
+// import { JsonWebTokenError } from "jsonwebtoken";
 
-    io.on("connection", (socket) => {
-       socket.on("setup",(userId)=>{
-           socket.join(userId)
-           socket.userId=userId
-       })
-    });
-    socket.on("send_message", async({from,to,message,imageUrl})=>{
-        const allowed = await isFriend(from,to);
-        if(!allowed) return;
+const app = express();
+const httpServer = http.createServer(app);
 
-        const chat = await chatSchema.create({ from, to, message,imageUrl });
-        const populateChat = await chat.populate("from to","name profilePic");
-        io.to(to).emit("receive_message",populateChat);
+/* ---------- Socket.IO ---------- */
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+  },
+});
 
-    })
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
 
-    socket.on("disconnect", () => {
-        console.log("user disconnected");
-    });
-};
+  socket.on("setup", (token) => {
+    const decoded = jwt.verify(token, "prasanna");
+    
+        const userId = decoded.userId; // ✔ correct
+    socket.join(userId);
+    socket.userId = userId;
+    console.log("User joined room:", userId);
+  });
 
-const server = express()
-//json support
-server.use(express.json())
-server.use(cors())
+  socket.on("send_message", async ({ from, to, message, imageUrl }) => {
+    try {
+        const decoded = jwt.verify(from, "prasanna");
+    
+        const userId = decoded.userId; // ✔ correct
+      const allowed = await isFriend(userId, to);
+      if (!allowed) return;
 
-server.get('/',(req,res)=>{
-    res.send("welcome from the 1st api")
-})
+      const chat = await chatSchema.create({
+        from:userId,
+        to,
+        message,
+        imageUrl,
+      });
 
-server.use("/api/user",userRouter)
-server.use("/api/post",postRouter)
-server.use("/api/friendrequest",friendRequestRouter)
-server.use("/api/notification",notificationRouter)
-server.use("/api/otp",otpRouter)
+      const populatedChat = await chat.populate(
+        "from to",
+        "name profilePic"
+      );
+      console.log(populatedChat);
+      
+
+      io.to(to).emit("receive_message", populatedChat);
+      io.to(from).emit("receive_message", populatedChat);
+    } catch (err) {
+      console.error("Socket send_message error:", err);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected:", socket.id);
+  });
+});
+
+/* ---------- Middlewares ---------- */
+app.use(cors());
+app.use(express.json());
+
+/* ---------- Routes ---------- */
+app.use("/api/user", userRouter);
+app.use("/api/post", postRouter);
+app.use("/api/friendrequest", friendRequestRouter);
+app.use("/api/notification", notificationRouter);
+app.use("/api/otp", otpRouter);
+app.use("/api/chat", chatRouter);
+
+/* ---------- DB ---------- */
 connectToDatabase();
 
+/* ---------- Server ---------- */
+const PORT = process.env.PORT || 5000;
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
-const port = process.env.PORT||5000;
-server.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-})
+export default httpServer;
