@@ -56,7 +56,7 @@ io.on("connection", (socket) => {
         "from to",
         "name profilePic"
       );
-      console.log(populatedChat);
+      console.log(populatedChat,'lololo');
       
 
       io.to(to).emit("receive_message", populatedChat);
