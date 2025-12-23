@@ -1,4 +1,5 @@
 import friendRequestSchema from "../schemas/friendRequest.schema.js";
+import { Notification } from "../schemas/notification.schema.js";
 
 export const sendFriendRequest = async (req, res) => {
   try {
@@ -30,6 +31,14 @@ export const sendFriendRequest = async (req, res) => {
       to: receiver,
       status: "pending",
     });
+
+    // Create notification for the receiver
+    await Notification.create({
+      from: sender,
+      to: receiver,
+      type: "friend_request",
+    });
+
     res
       .status(201)
       .json({ message: "Friend request sent successfully", friendRequest });
@@ -85,6 +94,17 @@ export const acceptOrRejectRequest = async (req, res) => {
     // ---------------------
     requestExist.status = status;
     await requestExist.save(); // save FIRST
+
+    // Create notification if accepted
+    if (status === "accepted") {
+      console.log("Creating notification for acceptance");
+      await Notification.create({
+        from: userId,
+        to: requestExist.from,
+        type: "friend_request_accept",
+      });
+      console.log("Notification created");
+    }
 
     // ---------------------
     // Send response ONCE
