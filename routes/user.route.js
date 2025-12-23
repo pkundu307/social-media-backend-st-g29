@@ -10,6 +10,7 @@ import { authMiddleware } from "../utility/auth.Middleware.js";
 import { upload } from "../utility/multer.js";
 import { getUserWithPosts } from "../controller/user.controller.js";
 import { updateUserDetails } from "../controller/user.controller.js";
+import { getFeedPost } from "../controller/post.controller.js";
 const router = express.Router();
 
 router.post("/register", register);
@@ -26,4 +27,5 @@ router.post(
 router.post("/change-password", authMiddleware, changePassword);
 router.put("/update", authMiddleware, updateUserDetails);
 router.get("/friendprofile/:id", authMiddleware, getUserProfileWithFriendStatus);
+router.get("/feeddata",authMiddleware,getFeedPost)
 export default router;

@@ -3,6 +3,7 @@ import cloudinary from "cloudinary";
 import multer from "multer";
 import dotenv from "dotenv";
 import { Notification } from "../schemas/notification.schema.js";
+import friendRequestSchema from "../schemas/friendRequest.schema.js";
 
 dotenv.config();
 
@@ -286,3 +287,33 @@ export const restorePost = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+export const getFeedPost = async(req,res)=>{
+  try {
+     const { id } = req.params;
+    const userId = req.user._id;
+
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+// direct friends
+    const friends = await friendRequestSchema.find({ $or: [ { from: userId }, { to: userId } ], status: "accepted" });
+    const friendIds = friends.map(friend => friend.from.toString() === userId.toString() ? friend.to.toString() : friend.from.toString());
+    let feedPosts = await Post.find({ user: { $in: friendIds } }).sort({ createdAt: -1 }).populate("user", "name email profilePic").skip(skip).limit(limit);
+// mutual friends
+
+const mutualFriends = await friendRequestSchema.find({ $or: [ { from: userId }, { to: userId } ], status: "accepted" });
+const mutualFriendIds = mutualFriends.map(friend => friend.from.toString() === userId.toString() ? friend.to.toString() : friend.from.toString());
+const mutualFriendPosts = await Post.find({ user: { $in: mutualFriendIds } }).sort({ createdAt: -1 }).populate("user", "name email profilePic").skip(skip).limit(limit);
+ feedPosts = [...feedPosts, ...mutualFriendPosts];
+
+
+    return res.status(200).json({ message: "Feed posts found", posts: feedPosts });
+
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+}
