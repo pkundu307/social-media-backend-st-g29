@@ -27,5 +27,6 @@ router.post(
 router.post("/change-password", authMiddleware, changePassword);
 router.put("/update", authMiddleware, updateUserDetails);
 router.get("/friendprofile/:id", authMiddleware, getUserProfileWithFriendStatus);
-router.get("/feeddata",authMiddleware,getFeedPost)
+router.get("/feed", authMiddleware, getFeedPost);
+
 export default router;

@@ -288,32 +288,86 @@ export const restorePost = async (req, res) => {
   }
 };
 
-
-export const getFeedPost = async(req,res)=>{
+export const getFeedPost = async (req, res) => {
   try {
-     const { id } = req.params;
     const userId = req.user._id;
 
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 5;
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 5, 20);
     const skip = (page - 1) * limit;
-// direct friends
-    const friends = await friendRequestSchema.find({ $or: [ { from: userId }, { to: userId } ], status: "accepted" });
-    const friendIds = friends.map(friend => friend.from.toString() === userId.toString() ? friend.to.toString() : friend.from.toString());
-    let feedPosts = await Post.find({ user: { $in: friendIds } }).sort({ createdAt: -1 }).populate("user", "name email profilePic").skip(skip).limit(limit);
-// mutual friends
 
-const mutualFriends = await friendRequestSchema.find({ $or: [ { from: userId }, { to: userId } ], status: "accepted" });
-const mutualFriendIds = mutualFriends.map(friend => friend.from.toString() === userId.toString() ? friend.to.toString() : friend.from.toString());
-const mutualFriendPosts = await Post.find({ user: { $in: mutualFriendIds } }).sort({ createdAt: -1 }).populate("user", "name email profilePic").skip(skip).limit(limit);
- feedPosts = [...feedPosts, ...mutualFriendPosts];
+    /* ------------------------------------
+       STEP 1: Get direct friends
+    ------------------------------------ */
+    const friends = await friendRequestSchema.find({
+      $or: [{ from: userId }, { to: userId }],
+      status: "accepted"
+    }).select("from to");
 
+    const directFriendIds = friends.map(f =>
+      f.from.toString() === userId.toString()
+        ? f.to.toString()
+        : f.from.toString()
+    );
 
-    return res.status(200).json({ message: "Feed posts found", posts: feedPosts });
+    /* ------------------------------------
+       STEP 2: Get mutual friends
+       (friends of my friends)
+    ------------------------------------ */
+    const mutualRequests = await friendRequestSchema.find({
+      $or: [
+        { from: { $in: directFriendIds } },
+        { to: { $in: directFriendIds } }
+      ],
+      status: "accepted"
+    }).select("from to");
 
-    
+    const mutualFriendIds = new Set();
+
+    mutualRequests.forEach(f => {
+      const from = f.from.toString();
+      const to = f.to.toString();
+
+      if (from !== userId.toString() && !directFriendIds.includes(from)) {
+        mutualFriendIds.add(from);
+      }
+      if (to !== userId.toString() && !directFriendIds.includes(to)) {
+        mutualFriendIds.add(to);
+      }
+    });
+
+    /* ------------------------------------
+       STEP 3: Final feed user IDs
+    ------------------------------------ */
+    const feedUserIds = [
+      ...new Set([...directFriendIds, ...mutualFriendIds])
+    ];
+
+    /* ------------------------------------
+       STEP 4: Fetch feed posts (ONE QUERY)
+    ------------------------------------ */
+    const posts = await Post.find({
+      user: { $in: feedUserIds },
+      isDeleted: false
+    })
+      .populate("user", "name email profilePic")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    /* ------------------------------------
+       STEP 5: Response
+    ------------------------------------ */
+    return res.status(200).json({
+      message: "Feed posts fetched successfully",
+      page,
+      limit,
+      count: posts.length,
+      posts
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error("Feed Error:", error);
+    res.status(500).json({ message: "Failed to fetch feed posts" });
   }
-}
+};
