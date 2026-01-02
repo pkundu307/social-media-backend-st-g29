@@ -133,9 +133,9 @@ export const getFriendsList = async (req, res) => {
       return res.status(400).json({ message: "Unauthorized access" });
     }
     const friends = await friendRequestSchema
-      .find({ 
-        $or: [ { from: userId }, { to: userId } ], 
-        status: "accepted" 
+      .find({
+        $or: [{ from: userId }, { to: userId }],
+        status: "accepted"
       })
       .sort({ updatedAt: -1 })
       .limit(15)
@@ -148,8 +148,8 @@ export const getFriendsList = async (req, res) => {
       return fr.from;
     }
     );
-    if(friendsList.length===0){
-      return  res.status(200).json({ message: "No Friends Found" });
+    if (friendsList.length === 0) {
+      return res.status(200).json({ message: "No Friends Found" });
     }
     res.status(200).json({ friends: friendsList });
   } catch (error) {
@@ -164,9 +164,9 @@ export const getAllFriends = async (req, res) => {
       return res.status(400).json({ message: "Unauthorized access" });
     }
     const friends = await friendRequestSchema
-      .find({ 
-        $or: [ { from: userId }, { to: userId } ], 
-        status: "accepted" 
+      .find({
+        $or: [{ from: userId }, { to: userId }],
+        status: "accepted"
       })
       .sort({ updatedAt: -1 })
       .populate("from", "name email profilePic")
@@ -178,10 +178,58 @@ export const getAllFriends = async (req, res) => {
       return fr.from;
     }
     );
-    if(friendsList.length===0){
-      return  res.status(200).json({ message: "No Friends Found" });
+    if (friendsList.length === 0) {
+      return res.status(200).json({ message: "No Friends Found" });
     }
     res.status(200).json({ friends: friendsList });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+}
+// Get rejected friend requests
+export const getRejectedFriendRequests = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { type = "all" } = req.query; // "all", "sent", "received"
+
+    // Build query based on type
+    let query = {
+      $or: [
+        { from: userId, status: "rejected" },
+        { to: userId, status: "rejected" }
+      ]
+    };
+
+    // If type is specified, filter accordingly
+    if (type === "sent") {
+      query = { from: userId, status: "rejected" };
+    } else if (type === "received") {
+      query = { to: userId, status: "rejected" };
+    }
+
+    const rejectedRequests = await friendRequestSchema
+      .find(query)
+      .populate("from", "name profilePic email")
+      .populate("to", "name profilePic email")
+      .sort({ updatedAt: -1 });
+
+    // Format the response to include direction info
+    const formattedRequests = rejectedRequests.map(request => {
+      const isSender = request.from._id.toString() === userId.toString();
+
+      return {
+        ...request.toObject(),
+        direction: isSender ? "sent" : "received",
+        otherUser: isSender ? request.to : request.from
+      };
+    });
+
+    if (formattedRequests.length === 0) {
+      return res.status(200).json({ message: "No Rejected Requests Found" });
+    }
+
+    res.status(200).json({ rejectedRequests: formattedRequests });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
