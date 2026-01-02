@@ -48,6 +48,18 @@ export const markAllNotificationsAsRead=async(req,res)=>{
     res.status(500).json({message:error.message});
   }
 }
+
+export const getUnreadNotificationCount=async(req,res)=>{
+  try {
+    const userId=req.user._id;
+    const count=await Notification.countDocuments({to:userId,checked:false});
+    res.status(200).json({unreadCount:count});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message:error.message});
+  }
+}
+
 // this api makes no sense at all
 export const triggerLikeNotification=async(req,res)=>{
     try {
