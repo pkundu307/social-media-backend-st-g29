@@ -16,10 +16,14 @@ const userSchema = new mongoose.Schema({
     Number: {
         type: Number,
     },
-    profilePic: { 
-        type: String, 
-        default: "" 
-    }
+    profilePic: {
+        type: String,
+        default: ""
+    },
+    friends: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }]
 }, { timestamps: true })
 
 export default mongoose.model("User", userSchema)
