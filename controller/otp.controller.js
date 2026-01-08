@@ -1,8 +1,9 @@
+import dotenv from "dotenv";
 import { OTP } from "../schemas/otp.schema.js";
 import nodemailer from "nodemailer";
 import UserSchema from "../schemas/User.schema.js";
 import bcrypt from "bcryptjs";
-
+dotenv.config()
 const salt = bcrypt.genSaltSync(10);
 
 export const createOTP = async (req, res) => {
@@ -31,8 +32,8 @@ export const createOTP = async (req, res) => {
       port: 587,
       secure: false,
       auth: {
-        user: "srenisivadas2004@gmail.com",
-        pass: "hyaf iifk cubd fchr", // Gmail App Password (correct)
+        user: process.env.mail_id,
+        pass: process.env.mail_app_password, // Gmail App Password (correct)
       },
     });
 
