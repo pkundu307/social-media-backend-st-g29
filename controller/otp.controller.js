@@ -38,7 +38,7 @@ export const createOTP = async (req, res) => {
     });
 
     const info = await transporter.sendMail({
-      from: "srenisivadas2004@gmail.com",
+      from: "pandugadharmateja05@gmail.com.com",
       to: email, // FIXED
       subject: "Your OTP Code",
       html: `<h2>Your OTP is: <b>${generatedOTP}</b></h2>`,
